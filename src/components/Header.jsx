@@ -3,36 +3,41 @@ import React, { useEffect, useRef } from "react";
 export default function Header() {
   const canvasRef = useRef(null);
   const bannerRef = useRef(null);
+  const dotsRef = useRef([]);
 
-  // Initialize the dots array outside of useEffect
-  const dots = [];
-  for (let index = 0; index < 50; index++) {
-    dots.push({
-      x: Math.floor(Math.random() * window.innerWidth),
-      y: Math.floor(Math.random() * window.innerHeight + 70),
-      size: Math.random() * 3 + 1,
-      color: "#EEEEEE",
-    });
-  }
-
+  // Initialize dots only once when the component mounts
   useEffect(() => {
     const canvas = canvasRef.current;
     const banner = bannerRef.current;
     const ctx = canvas.getContext("2d");
 
-    // Set the canvas size based on the banner size
+    // Set canvas size and initialize dots
     const setCanvasSize = () => {
       canvas.width = banner.offsetWidth;
       canvas.height = banner.offsetHeight;
+
+      // Initialize dots only if they are not already initialized
+      if (dotsRef.current.length === 0) {
+        for (let index = 0; index < 50; index++) {
+          dotsRef.current.push({
+            xPercent: Math.random(), // Percentage of canvas width
+            yPercent: Math.random(), // Percentage of canvas height
+            size: Math.random() * 3 + 1,
+            color: "#EEEEEE",
+          });
+        }
+      }
     };
     setCanvasSize();
 
     // Draw dots on the canvas
     const drawDots = () => {
-      dots.forEach((dot) => {
+      dotsRef.current.forEach((dot) => {
+        const x = dot.xPercent * canvas.width;
+        const y = dot.yPercent * canvas.height;
         ctx.fillStyle = dot.color;
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+        ctx.arc(x, y, dot.size, 0, Math.PI * 2);
         ctx.fill();
       });
     };
@@ -45,15 +50,15 @@ export default function Header() {
         x: event.clientX - banner.getBoundingClientRect().left,
         y: event.clientY - banner.getBoundingClientRect().top,
       };
-      dots.forEach((dot) => {
-        const distance = Math.sqrt(
-          (mouse.x - dot.x) ** 2 + (mouse.y - dot.y) ** 2
-        );
+      dotsRef.current.forEach((dot) => {
+        const x = dot.xPercent * canvas.width;
+        const y = dot.yPercent * canvas.height;
+        const distance = Math.sqrt((mouse.x - x) ** 2 + (mouse.y - y) ** 2);
         if (distance < 300) {
           ctx.strokeStyle = dot.color;
           ctx.lineWidth = 0.4;
           ctx.beginPath();
-          ctx.moveTo(dot.x, dot.y);
+          ctx.moveTo(x, y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.stroke();
         }
@@ -87,7 +92,7 @@ export default function Header() {
       banner.removeEventListener("mouseout", handleMouseOut);
       window.removeEventListener("resize", handleResize);
     };
-  }, []); // The empty array ensures the effect runs only once (on mount)
+  }, []); // Empty array ensures this effect runs only once (on mount)
 
   function snapToproject() {
     const container = document.getElementById("label");
